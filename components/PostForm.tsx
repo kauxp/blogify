@@ -31,13 +31,16 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
   const { addToast } = useStore();
   const utils = client.useUtils();
 
+  // Fetch post if editing
   const { data: post, isLoading: postLoading } = client.posts.getById.useQuery(
-    { id: postId! },
+    { id: Number(postId) },
     { enabled: !!postId }
   );
 
+  // Fetch categories
   const { data: categories } = client.categories.list.useQuery();
 
+  // React Hook Form setup
   const {
     register,
     handleSubmit,
@@ -51,47 +54,63 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
       slug: post?.slug || "",
       content: post?.content || "",
       excerpt: "",
-      status: (post?.is_published ? PostStatus.PUBLISHED : PostStatus.DRAFT) as "DRAFT" | "PUBLISHED",
+      status: (post?.is_published
+        ? PostStatus.PUBLISHED
+        : PostStatus.DRAFT) as "DRAFT" | "PUBLISHED",
       authorName: "",
-      categoryIds: [] as string[],
+      categoryIds: [], // will store as string[]
     },
   });
 
+  // Mutations
   const createMutation = client.posts.create.useMutation({
     onSuccess: () => {
+      console.log("Submitting data:", createMutation.variables);
+
       utils.posts.list.invalidate();
       addToast({ message: "Post created successfully", type: "success" });
       onSuccess();
     },
-    onError: (error: any) => {
-      addToast({ message: error?.message || "Failed to create post", type: "error" });
+    onError: (error) => {
+      console.error("Error creating post:", error);
+      addToast({
+        message: error?.message || "Failed to create post",
+        type: "error",
+      });
     },
   });
-  
+
   const updateMutation = client.posts.update.useMutation({
     onSuccess: () => {
       utils.posts.list.invalidate();
-      utils.posts.getById.invalidate({ id: postId! });
+      utils.posts.getById.invalidate({ id: Number(postId!) });
       addToast({ message: "Post updated successfully", type: "success" });
       onSuccess();
     },
     onError: (error: any) => {
-      addToast({ message: error?.message || "Failed to update post", type: "error" });
+      addToast({
+        message: error?.message || "Failed to update post",
+        type: "error",
+      });
     },
   });
 
+  // Submit handler
   const onSubmit = (data: CreatePost) => {
     const submitData = {
       ...data,
-      categoryIds: data.categoryIds.map(id => Number(id))
+      // convert categoryIds to numbers for backend
+      categoryIds: data.categoryIds.map((id) => Number(id)),
     };
+
     if (postId) {
-      updateMutation.mutate({ id: postId, ...submitData });
+      updateMutation.mutate({ id: Number(postId), ...submitData });
     } else {
       createMutation.mutate(submitData);
     }
   };
 
+  // Auto-generate slug
   const generateSlug = () => {
     const title = watch("title");
     if (title) {
@@ -103,21 +122,22 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
     }
   };
 
-  if (postLoading) {
-    return <LoadingSpinner size="lg" />;
-  }
+  if (postLoading) return <LoadingSpinner size="lg" />;
 
+  // Category handling
   const selectedCategories = watch("categoryIds") || [];
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryId: number) => {
+    const idStr = String(categoryId); // keep as string inside form
     const current = selectedCategories;
-    if (current.includes(categoryId)) {
+
+    if (current.includes(idStr)) {
       setValue(
         "categoryIds",
-        current.filter((id) => id !== categoryId)
+        current.filter((id) => id !== idStr)
       );
     } else {
-      setValue("categoryIds", [...current, categoryId]);
+      setValue("categoryIds", [...current, idStr]);
     }
   };
 
@@ -133,8 +153,10 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
           </Button>
         </div>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
             <Input
@@ -148,18 +170,16 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
             )}
           </div>
 
+          {/* Slug */}
           <div className="space-y-2">
             <Label htmlFor="slug">Slug *</Label>
-            <Input
-              id="slug"
-              {...register("slug")}
-              placeholder="post-url-slug"
-            />
+            <Input id="slug" {...register("slug")} placeholder="post-url-slug" />
             {errors.slug && (
               <p className="text-sm text-destructive">{errors.slug.message}</p>
             )}
           </div>
 
+          {/* Excerpt */}
           <div className="space-y-2">
             <Label htmlFor="excerpt">Excerpt</Label>
             <Textarea
@@ -168,19 +188,15 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
               placeholder="Brief description of the post"
               rows={3}
             />
-            {errors.excerpt && (
-              <p className="text-sm text-destructive">
-                {errors.excerpt.message}
-              </p>
-            )}
           </div>
 
+          {/* Content */}
           <div className="space-y-2">
-            <Label htmlFor="content">Content * (Markdown supported)</Label>
+            <Label htmlFor="content">Content *</Label>
             <Textarea
               id="content"
               {...register("content")}
-              placeholder="Write your post content in markdown..."
+              placeholder="Write your post content..."
               rows={15}
               className="font-mono"
             />
@@ -191,6 +207,7 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
             )}
           </div>
 
+          {/* Author Name */}
           <div className="space-y-2">
             <Label htmlFor="authorName">Author Name</Label>
             <Input
@@ -198,13 +215,9 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
               {...register("authorName")}
               placeholder="Enter author name"
             />
-            {errors.authorName && (
-              <p className="text-sm text-destructive">
-                {errors.authorName.message}
-              </p>
-            )}
           </div>
 
+          {/* Status */}
           <div className="space-y-2">
             <Label htmlFor="status">Status *</Label>
             <Select
@@ -223,29 +236,32 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
             </Select>
           </div>
 
+          {/* Categories */}
           {categories && categories.length > 0 && (
             <div className="space-y-2">
               <Label>Categories</Label>
               <div className="flex flex-wrap gap-2 p-4 border rounded-lg">
-                {categories.map((category) => (
-                  <Button
-                    key={category.id}
-                    type="button"
-                    variant={
-                      selectedCategories.includes(category.id)
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() => toggleCategory(category.id)}
-                  >
-                    {category.name}
-                  </Button>
-                ))}
+                {categories.map((category) => {
+                  const isSelected = selectedCategories.includes(
+                    String(category.id)
+                  );
+                  return (
+                    <Button
+                      key={category.id}
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleCategory(category.id)}
+                    >
+                      {category.name}
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           )}
 
+          {/* Submit + Cancel */}
           <div className="flex gap-4 pt-4">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (

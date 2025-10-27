@@ -40,23 +40,24 @@ export const postsRouter = router({
         content: z.string(),
         slug: z.string(),
         categoryIds: z.array(z.number()).optional(),
-        is_published: z.boolean().optional(),
+        status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      console.log("Creating post with input:", input);
       const [created] = await ctx.db
         .insert(posts)
         .values({
           title: input.title,
           content: input.content,
           slug: input.slug,
-          is_published: !!input.is_published,
+          is_published: !!input.status && input.status === "PUBLISHED",
         })
         .returning();
 
       if (input.categoryIds && input.categoryIds.length) {
         const items = input.categoryIds.map((cid) => ({
-          post_id: (created).id,
+          post_id: created.id,
           category_id: cid,
         }));
         await ctx.db.insert(posts_categories).values(items);
@@ -83,27 +84,31 @@ export const postsRouter = router({
           title: input.title,
           content: input.content,
           slug: input.slug,
-          is_published: !!input.is_published,
+          is_published: input.is_published ?? false, // safer default
+          updated_at: new Date(),
         })
         .where(eq(posts.id, input.id));
 
-      if (input.categoryIds) {
+      if (input.categoryIds && input.categoryIds.length > 0) {
         await ctx.db
           .delete(posts_categories)
           .where(eq(posts_categories.post_id, input.id));
+
         const items = input.categoryIds.map((cid) => ({
           post_id: input.id,
           category_id: cid,
         }));
+
         await ctx.db.insert(posts_categories).values(items);
       }
 
-      const [row] = await ctx.db
+      const [updatedPost] = await ctx.db
         .select()
         .from(posts)
         .where(eq(posts.id, input.id))
         .limit(1);
-      return row;
+
+      return updatedPost;
     }),
 
   delete: publicProcedure
@@ -116,15 +121,15 @@ export const postsRouter = router({
       return { success: true };
     }),
 
-    getById: publicProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const post = await ctx.db
-          .select()
-          .from(posts)
-          .where(eq(posts.id, input.id))
-          .limit(1)
-          .execute();
-        return post[0];
-      }),
+  getById: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const post = await ctx.db
+        .select()
+        .from(posts)
+        .where(eq(posts.id, input.id))
+        .limit(1)
+        .execute();
+      return post[0];
+    }),
 });
