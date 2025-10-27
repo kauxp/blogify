@@ -36,4 +36,16 @@ export const categoriesRouter = router({
       await ctx.db.delete(categories).where(eq(categories.id, input.id));
       return { success: true };
     }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const category = await ctx.db
+          .select()
+          .from(categories)
+          .where(eq(categories.id, input.id))
+          .limit(1)
+          .execute();
+        return category[0];
+      }),
 });

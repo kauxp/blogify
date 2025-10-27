@@ -2,6 +2,7 @@ import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { router, publicProcedure } from "../trpcHelpers";
 import { posts, posts_categories } from "@/server/drizzle/schema";
+import { get } from "http";
 
 export type PostWithCategories = {
   id: number;
@@ -114,4 +115,16 @@ export const postsRouter = router({
       await ctx.db.delete(posts).where(eq(posts.id, input.id));
       return { success: true };
     }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const post = await ctx.db
+          .select()
+          .from(posts)
+          .where(eq(posts.id, input.id))
+          .limit(1)
+          .execute();
+        return post[0];
+      }),
 });

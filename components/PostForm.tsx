@@ -29,7 +29,7 @@ interface PostFormProps {
 
 export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
   const { addToast } = useStore();
-  const utils = client.useContext();
+  const utils = client.useUtils();
 
   const { data: post, isLoading: postLoading } = client.posts.getById.useQuery(
     { id: postId! },

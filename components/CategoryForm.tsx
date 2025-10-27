@@ -21,7 +21,7 @@ interface CategoryFormProps {
 
 export function CategoryForm({ categoryId, onClose, onSuccess }: CategoryFormProps) {
   const { addToast } = useStore();
-  const utils = client.useContext();
+  const utils = client.useUtils();
 
   const { data: category, isLoading: categoryLoading } = client.categories.getById.useQuery(
     { id: categoryId! },
