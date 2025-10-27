@@ -9,15 +9,12 @@ type Toast = {
 };
 
 type Store = {
-  // 🧭 Category selection
   selectedCategoryId: number | null;
   setSelectedCategoryId: (id: number | null) => void;
 
-  // 📱 Mobile menu
   isMobileMenuOpen: boolean;
   setMobileMenuOpen: (value: boolean) => void;
 
-  // 🔔 Toast notifications
   toasts: Toast[];
   addToast: (toast: Omit<Toast, "id">) => void;
   removeToast: (id: string) => void;
@@ -25,11 +22,9 @@ type Store = {
 };
 
 export const useStore = create<Store>((set) => ({
-  // 🧭 Category
   selectedCategoryId: null,
   setSelectedCategoryId: (id) => set({ selectedCategoryId: id }),
 
-  // 📱 Mobile menu
   isMobileMenuOpen: false,
   setMobileMenuOpen: (value) => set({ isMobileMenuOpen: value }),
 
@@ -37,14 +32,11 @@ export const useStore = create<Store>((set) => ({
   toasts: [],
   addToast: (toast) =>
     set((state) => ({
-      toasts: [
-        ...state.toasts,
-        { id: crypto.randomUUID(), ...toast }
-      ]
+      toasts: [...state.toasts, { id: crypto.randomUUID(), ...toast }],
     })),
   removeToast: (id) =>
     set((state) => ({
-      toasts: state.toasts.filter((t) => t.id !== id)
+      toasts: state.toasts.filter((t) => t.id !== id),
     })),
   clearToasts: () => set({ toasts: [] }),
 }));

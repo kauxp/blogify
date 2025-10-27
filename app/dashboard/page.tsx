@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { trpc } from "../../lib/trpc";
+import { client } from "../../lib/client";
 import { useStore } from "../../store/useStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,12 +33,12 @@ export default function DashboardPage() {
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
   const { addToast } = useStore();
-  const utils = trpc.useContext();
+  const utils = client.useContext();
 
-  const { data: posts, isLoading: postsLoading } = trpc.posts.list.useQuery({});
-  const { data: categories, isLoading: categoriesLoading } = trpc.categories.list.useQuery();
+  const { data: posts, isLoading: postsLoading } = client.posts.list.useQuery({});
+  const { data: categories, isLoading: categoriesLoading } = client.categories.list.useQuery();
 
-  const deletePostMutation = trpc.posts.delete.useMutation({
+  const deletePostMutation = client.posts.delete.useMutation({
     onSuccess: () => {
       utils.posts.list.invalidate();
       addToast("Post deleted successfully");
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     },
   });
 
-  const deleteCategoryMutation = trpc.category.delete.useMutation({
+  const deleteCategoryMutation = client.category.delete.useMutation({
     onSuccess: () => {
       utils.category.list.invalidate();
       addToast("Category deleted successfully", "success");

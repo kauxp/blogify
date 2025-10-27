@@ -36,7 +36,7 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
     { enabled: !!postId }
   );
 
-  const { data: categories } = client.category.list.useQuery();
+  const { data: categories } = client.categories.list.useQuery();
 
   const {
     register,

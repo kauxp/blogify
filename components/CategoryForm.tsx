@@ -23,7 +23,7 @@ export function CategoryForm({ categoryId, onClose, onSuccess }: CategoryFormPro
   const { addToast } = useStore();
   const utils = client.useContext();
 
-  const { data: category, isLoading: categoryLoading } = client.category.getById.useQuery(
+  const { data: category, isLoading: categoryLoading } = client.categories.getById.useQuery(
     { id: categoryId! },
     { enabled: !!categoryId }
   );
@@ -42,9 +42,9 @@ export function CategoryForm({ categoryId, onClose, onSuccess }: CategoryFormPro
     },
   });
 
-  const createMutation = client.category.create.useMutation({
+  const createMutation = client.categories.create.useMutation({
     onSuccess: () => {
-      utils.category.list.invalidate();
+      utils.categories.list.invalidate();
       addToast("Category created successfully", "success");
       onSuccess();
     },
@@ -53,10 +53,10 @@ export function CategoryForm({ categoryId, onClose, onSuccess }: CategoryFormPro
     },
   });
 
-  const updateMutation = client.category.update.useMutation({
+  const updateMutation = client.categories.update.useMutation({
     onSuccess: () => {
-      utils.category.list.invalidate();
-      utils.category.getById.invalidate({ id: categoryId! });
+      utils.categories.list.invalidate();
+      utils.categories.getById.invalidate({ id: categoryId! });
       addToast("Category updated successfully", "success");
       onSuccess();
     },

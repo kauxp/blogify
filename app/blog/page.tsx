@@ -1,6 +1,6 @@
 "use client";
 
-import { trpc } from "../../lib/trpc";
+import { client } from "../../lib/trpc";
 import { useStore } from "../../store/useStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +14,9 @@ import { Calendar, User } from "lucide-react";
 export default function BlogPage() {
   const { selectedCategoryId, setSelectedCategoryId } = useStore();
 
-  const { data: categories, isLoading: categoriesLoading } = trpc.category.list.useQuery();
-  
-  const { data: posts, isLoading: postsLoading, error } = trpc.posts.list.useQuery({
+  const { data: categories, isLoading: categoriesLoading } = client.categories.list.useQuery();
+
+  const { data: posts, isLoading: postsLoading, error } = client.posts.list.useQuery({
     status: "PUBLISHED",
     categoryId: selectedCategoryId || undefined,
   });
