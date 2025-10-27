@@ -16,10 +16,7 @@ export default function BlogPage() {
 
   const { data: categories, isLoading: categoriesLoading } = client.categories.list.useQuery();
 
-  const { data: posts, isLoading: postsLoading, error } = client.posts.list.useQuery({
-    status: "PUBLISHED",
-    categoryId: selectedCategoryId || undefined,
-  });
+  const { data: posts, isLoading: postsLoading, error } = client.posts.list.useQuery();
 
   if (postsLoading || categoriesLoading) {
     return (

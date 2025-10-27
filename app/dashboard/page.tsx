@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { client } from "../../lib/client";
+import { client } from "../../lib/trpc";
 import { useStore } from "../../store/useStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ErrorMessage } from "@/components/ErrorMessage";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,45 +26,45 @@ import { CategoryForm } from "@/components/CategoryForm";
 export default function DashboardPage() {
   const [showPostForm, setShowPostForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [editingPostId, setEditingPostId] = useState<string | null>(null);
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [deletePostId, setDeletePostId] = useState<string | null>(null);
-  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [deletePostId, setDeletePostId] = useState<number | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
 
   const { addToast } = useStore();
-  const utils = client.useContext();
+  const utils = client.useUtils();
 
-  const { data: posts, isLoading: postsLoading } = client.posts.list.useQuery({});
+  const { data: posts, isLoading: postsLoading } = client.posts.list.useQuery();
   const { data: categories, isLoading: categoriesLoading } = client.categories.list.useQuery();
 
   const deletePostMutation = client.posts.delete.useMutation({
     onSuccess: () => {
       utils.posts.list.invalidate();
-      addToast("Post deleted successfully");
+      addToast({ message: "Post deleted successfully", type: "success" });
       setDeletePostId(null);
     },
     onError: (error) => {
-      addToast(error.message || "Failed to delete post");
+      addToast({ message: error.message || "Failed to delete post", type: "error" });
     },
   });
 
-  const deleteCategoryMutation = client.category.delete.useMutation({
+  const deleteCategoryMutation = client.categories.delete.useMutation({
     onSuccess: () => {
-      utils.category.list.invalidate();
-      addToast("Category deleted successfully", "success");
+      utils.categories.list.invalidate();
+      addToast({ message: "Category deleted successfully", type: "success" });
       setDeleteCategoryId(null);
     },
     onError: (error) => {
-      addToast(error.message || "Failed to delete category", "error");
+      addToast({ message: error.message || "Failed to delete category", type: "error" });
     },
   });
 
-  const handleEditPost = (id: string) => {
+  const handleEditPost = (id: number) => {
     setEditingPostId(id);
     setShowPostForm(true);
   };
 
-  const handleEditCategory = (id: string) => {
+  const handleEditCategory = (id: number) => {
     setEditingCategoryId(id);
     setShowCategoryForm(true);
   };
@@ -92,7 +91,7 @@ export default function DashboardPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <PostForm
-          postId={editingPostId || undefined}
+          postId={editingPostId ? String(editingPostId) : undefined}
           onClose={handleClosePostForm}
           onSuccess={handleClosePostForm}
         />
@@ -104,7 +103,7 @@ export default function DashboardPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <CategoryForm
-          categoryId={editingCategoryId || undefined}
+          categoryId={editingCategoryId ? String(editingCategoryId) : undefined}
           onClose={handleCloseCategoryForm}
           onSuccess={handleCloseCategoryForm}
         />
@@ -144,22 +143,16 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold truncate">{post.title}</h3>
-                      <Badge variant={post.status === "PUBLISHED" ? "default" : "secondary"}>
-                        {post.status}
+                      <Badge variant={post.is_published ? "default" : "secondary"}>
+                        {post.is_published ? "PUBLISHED" : "DRAFT"}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      <span>{formatDate(post.updatedAt || post.createdAt || new Date())}</span>
-                      {post.categories && post.categories.length > 0 && (
-                        <>
-                          <span>•</span>
-                          <span>{post.categories.map(c => c.name).join(", ")}</span>
-                        </>
-                      )}
+                      <span>{formatDate(post.updated_at || post.created_at || new Date())}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    {post.status === "PUBLISHED" && (
+                    {post.is_published && (
                       <Link href={`/blog/${post.slug}`}>
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />

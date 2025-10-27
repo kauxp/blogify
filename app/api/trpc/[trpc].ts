@@ -1,8 +1,3 @@
-import * as trpcNext from "@trpc/server/adapters/next";
-import { appRouter } from "@/server/trpc/root";
-import { createContext } from "@/server/trpc/context";
-
-export default trpcNext.createNextApiHandler({
-  router: appRouter,
-  createContext
-});
+// This file has been moved to [trpc]/route.ts for Next.js App Router compatibility
+// Please delete this file - it's kept temporarily to avoid breaking changes
+export { };

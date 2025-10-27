@@ -46,50 +46,49 @@ export function PostForm({ postId, onClose, onSuccess }: PostFormProps) {
     setValue,
   } = useForm<CreatePost>({
     resolver: zodResolver(createPostSchema),
-    defaultValues: post || {
-      title: "",
-      slug: "",
-      content: "",
+    defaultValues: {
+      title: post?.title || "",
+      slug: post?.slug || "",
+      content: post?.content || "",
       excerpt: "",
-      status: PostStatus.DRAFT,
+      status: (post?.is_published ? PostStatus.PUBLISHED : PostStatus.DRAFT) as "DRAFT" | "PUBLISHED",
       authorName: "",
-      categoryIds: [],
+      categoryIds: [] as string[],
     },
   });
 
-  const createMutation = client.posts.create.mutate({
-    title: input.title,
-    content: input.content,
-    slug: input.slug,
-    is_published: input.is_published,
-    categoryIds: input.categoryIds,
-  })
-  
+  const createMutation = client.posts.create.useMutation({
+    onSuccess: () => {
+      utils.posts.list.invalidate();
+      addToast({ message: "Post created successfully", type: "success" });
+      onSuccess();
+    },
+    onError: (error: any) => {
+      addToast({ message: error?.message || "Failed to create post", type: "error" });
+    },
+  });
   
   const updateMutation = client.posts.update.useMutation({
     onSuccess: () => {
       utils.posts.list.invalidate();
       utils.posts.getById.invalidate({ id: postId! });
-      addToast("Post updated successfully", "success");
+      addToast({ message: "Post updated successfully", type: "success" });
       onSuccess();
     },
     onError: (error: any) => {
-      addToast(error?.message || "Failed to update post", "error");
-    },
-  });
-      addToast("Post updated successfully", "success");
-      onSuccess();
-    },
-    onError: (error) => {
-      addToast(error.message || "Failed to update post", "error");
+      addToast({ message: error?.message || "Failed to update post", type: "error" });
     },
   });
 
   const onSubmit = (data: CreatePost) => {
+    const submitData = {
+      ...data,
+      categoryIds: data.categoryIds.map(id => Number(id))
+    };
     if (postId) {
-      updateMutation.mutate({ id: postId, ...data });
+      updateMutation.mutate({ id: postId, ...submitData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(submitData);
     }
   };
 
